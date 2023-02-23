@@ -27,6 +27,7 @@ Index of this file:
 #endif
 
 #include "imgui.h"
+#include <raqm.h>
 #ifndef IMGUI_DISABLE
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
@@ -6779,7 +6780,72 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
     const ImU32 col_untinted = col | ~IM_COL32_A_MASK;
     const char *word_wrap_eol = NULL;
 
+    //---------------------------------------------------------------------------------------
+
+    const char *fontfile;
+    const char *qtext;
+    const char *direction;
+    const char *language;
+    int ret = 1;
+
+    FT_Library library = NULL;
+    FT_Face face = NULL;
+
+    fontfile = "imgui/misc/fonts/ARIALUNI.TTF";
+    qtext = text.Begin;
+    // direction = RAQM_DIRECTION_DEFAULT;
+    // language = argv[4];
+    size_t q_count;
+    size_t i = 0;
+    raqm_glyph_t *qglyphs;
+    if (FT_Init_FreeType(&library) == 0)
+    {
+        if (FT_New_Face(library, fontfile, 0, &face) == 0)
+        {
+            if (FT_Set_Char_Size(face, face->units_per_EM, 0, 0, 0) == 0)
+            {
+                raqm_t *rq = raqm_create();
+                if (rq != NULL)
+                {
+                    raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
+
+                    if (raqm_set_text_utf8(rq, qtext, strlen(qtext)) &&
+                        raqm_set_freetype_face(rq, face) &&
+                        raqm_set_par_direction(rq, dir) &&
+                        raqm_set_language(rq, "fa", 0, strlen(qtext)) &&
+                        raqm_layout(rq))
+                    {
+                        qglyphs = raqm_get_glyphs(rq, &q_count);
+
+                        ret = !(qglyphs != NULL || q_count == 0);
+
+                        // printf("glyph count: %zu\n", count);
+                        // for (i = 0; i < count; i++)
+                        // {
+                        //     printf("gid#%d off: (%d, %d) adv: (%d, %d) idx: %d\n",
+                        //            qglyphs[i].index,
+                        //            qglyphs[i].x_offset,
+                        //            qglyphs[i].y_offset,
+                        //            qglyphs[i].x_advance,
+                        //            qglyphs[i].y_advance,
+                        //            qglyphs[i].cluster);
+                        // }
+                    }
+
+                    raqm_destroy(rq);
+                }
+            }
+
+            FT_Done_Face(face);
+        }
+
+        FT_Done_FreeType(library);
+    }
+
+    //---------------------------------------------------------------------------------------
+    size_t j = 0;
     while (s < text_end)
+    // while(i<q_count)
     {
         if (word_wrap_enabled)
         {
@@ -6819,6 +6885,7 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
         }
 
         const ImFontGlyph *glyph = FindGlyph((ImWchar)c);
+
         if (glyph == NULL)
             continue;
 
@@ -6826,10 +6893,15 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
         if (glyph->Visible)
         {
             // We don't do a second finer clipping test on the Y axis as we've already skipped anything before clip_rect.y and exit once we pass clip_rect.w
-            float x1 = x + glyph->X0 * scale;
-            float x2 = x + glyph->X1 * scale;
+            float q_x1 = x + qglyphs[j].x_offset; // glyph->X0 * scale;
+            float q_x2 = x + qglyphs[j].x_advance;                    // glyph->X1 * scale;
+            float q_y1 = y + qglyphs[j].y_offset; //glyph->Y0 * scale;
+            float q_y2 = y + qglyphs[j].y_advance; // glyph->Y1 * scale;
+            
+            float x1 = x +  glyph->X0 * scale;
+            float x2 = x +  glyph->X1 * scale;
             float y1 = y + glyph->Y0 * scale;
-            float y2 = y + glyph->Y1 * scale;
+            float y2 = y +  glyph->Y1 * scale;
             if (x1 <= clip_rect.z && x2 >= clip_rect.x)
             {
                 // Render a character
@@ -6906,6 +6978,7 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
             }
         }
         x += char_width;
+        j++;
     }
 
     // Give back unused vertices (clipped ones, blanks) ~ this is essentially a PrimUnreserve() action.
