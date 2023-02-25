@@ -6364,6 +6364,7 @@ void TextInterpolation(ImStrv *buf_out,const char* fmt, ...)
 }
 unsigned int max_hb_codepoint = 0;
 
+unsigned int *raqm_lookup;
 
 void ImFont::BuildLookupTable()
 {
@@ -6474,26 +6475,13 @@ void ImFont::BuildLookupTable()
                                 raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
 
                                 ret = !(glyphs != NULL || count == 0);
-
-                                printf("glyph '%s': Codepoint: %d index: %zu\n",s , Glyphs[l].Codepoint, glyphs[0].index);
-                                // for (i = 0; i < count; i++)
-                                // {
-                                //     printf("gid#%d off: (%d, %d) adv: (%d, %d) idx: %d\n",
-                                //            glyphs[i].index,
-                                //            glyphs[i].x_offset,
-                                //            glyphs[i].y_offset,
-                                //            glyphs[i].x_advance,
-                                //            glyphs[i].y_advance,
-                                //            glyphs[i].cluster);
-                                // }
-
+                                if(l<15)
+                                    printf("glyph '%s': Codepoint: %d index: %zu\n",s , Glyphs[l].Codepoint, glyphs[0].index);
+                                
                                 unsigned int cp = Glyphs[l].Codepoint;
                                 _raqm_lookup[l * 2] = glyphs[0].index;
                                 _raqm_lookup[l * 2 + 1] = Glyphs[l].Codepoint;
-                            // }
-                            // }
-                            // }
-                        }
+                            }
                     }
                     raqm_destroy(rq);
                 }
@@ -6503,6 +6491,7 @@ void ImFont::BuildLookupTable()
         }
 
         FT_Done_FreeType(library);
+        raqm_lookup=_raqm_lookup;
     }
 
     //--------------------------------------------------------------------
@@ -6988,17 +6977,6 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
 
                         ret = !(qglyphs != NULL || q_count == 0);
 
-                        // printf("glyph count: %zu\n", count);
-                        // for (i = 0; i < count; i++)
-                        // {
-                        //     printf("gid#%d off: (%d, %d) adv: (%d, %d) idx: %d\n",
-                        //            qglyphs[i].index,
-                        //            qglyphs[i].x_offset,
-                        //            qglyphs[i].y_offset,
-                        //            qglyphs[i].x_advance,
-                        //            qglyphs[i].y_advance,
-                        //            qglyphs[i].cluster);
-                        // }
                     }
 
                     raqm_destroy(rq);
@@ -7053,7 +7031,17 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
                 continue;
         }
 
-        const ImFontGlyph *glyph = FindGlyph((ImWchar)c);
+        const ImFontGlyph *glyph =NULL;// FindGlyph((ImWchar)c);
+        for (size_t kk = 0; kk < Glyphs.Size; kk++)
+        {
+            if (raqm_lookup[kk * 2] == qglyphs[j].index)
+            {
+                unsigned int cp = raqm_lookup[kk * 2 + 1];
+                glyph = &Glyphs[cp];
+                break;
+            }
+        }
+        j++;
 
         if (glyph == NULL)
             continue;
@@ -7062,11 +7050,11 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
         if (glyph->Visible)
         {
             // We don't do a second finer clipping test on the Y axis as we've already skipped anything before clip_rect.y and exit once we pass clip_rect.w
-            float q_x1 = x + qglyphs[j].x_offset; // glyph->X0 * scale;
-            float q_x2 = x + qglyphs[j].x_advance;                    // glyph->X1 * scale;
-            float q_y1 = y + qglyphs[j].y_offset; //glyph->Y0 * scale;
-            float q_y2 = y + qglyphs[j].y_advance; // glyph->Y1 * scale;
-            qglyphs[j].index;
+            // float q_x1 = x + qglyphs[j].x_offset; // glyph->X0 * scale;
+            // float q_x2 = x + qglyphs[j].x_advance;                    // glyph->X1 * scale;
+            // float q_y1 = y + qglyphs[j].y_offset; //glyph->Y0 * scale;
+            // float q_y2 = y + qglyphs[j].y_advance; // glyph->Y1 * scale;
+            // qglyphs[j].index;
             float x1 = x + glyph->X0 * scale;
             float x2 = x +  glyph->X1 * scale;
             float y1 = y + glyph->Y0 * scale;
@@ -7147,7 +7135,7 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
             }
         }
         x += char_width;
-        j++;
+        // j++;
     }
 
     // Give back unused vertices (clipped ones, blanks) ~ this is essentially a PrimUnreserve() action.
