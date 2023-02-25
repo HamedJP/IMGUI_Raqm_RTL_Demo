@@ -27,6 +27,7 @@ Index of this file:
 #endif
 
 #include "imgui.h"
+// #include "../libraqm/raqm.h"
 #include <raqm.h>
 #ifndef IMGUI_DISABLE
 
@@ -73,6 +74,16 @@ Index of this file:
 #pragma GCC diagnostic ignored "-Wstack-protector"  // warning: stack protector not protecting local variables: variable length buffer
 #pragma GCC diagnostic ignored "-Wclass-memaccess"  // [__GNUC__ >= 8] warning: 'memset/memcpy' clearing/writing an object of type 'xxxx' with no trivial copy-assignment; use assignment or value-initialization instead
 #endif
+
+
+//-------------------------------------------------------------------------
+//Raqm items
+
+FT_Library library = NULL;
+FT_Face face = NULL;
+raqm_t *raqm_buf;
+
+//-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
 // [SECTION] STB libraries implementation (for stb_truetype and stb_rect_pack)
@@ -2318,6 +2329,24 @@ ImFont *ImFontAtlas::AddFontFromFileTTF(ImStrv filename, float size_pixels, cons
         filename.Begin = p;
         ImFormatString(font_cfg.Name, IM_ARRAYSIZE(font_cfg.Name), "%.*s, %.0fpx", (int)filename.length(), filename.Begin, size_pixels);
     }
+
+    //---------------------------------------------------------
+
+    if (FT_Init_FreeType (&library) == 0)
+    {
+      if (FT_New_Face (library, filename.Begin, 0, &face) == 0)
+      {
+        if (FT_Set_Char_Size (face, face->units_per_EM, 0, 0, 0) == 0)
+        {
+          raqm_buf = raqm_create ();
+          if (raqm_buf != NULL)
+          {
+
+          }
+        }
+      }
+    }
+    //---------------------------------------------------------
     return AddFontFromMemoryTTF(data, (int)data_size, size_pixels, &font_cfg, glyph_ranges);
 }
 
@@ -2975,6 +3004,17 @@ const ImWchar *ImFontAtlas::GetGlyphRangesDefault()
         {
             0x0020,
             0x06FF, // Basic Latin + Latin Supplement
+            0,
+        };
+    return &ranges[0];
+}
+
+const ImWchar *ImFontAtlas::GetGlyphRangesFULL()
+{
+    static const ImWchar ranges[] =
+        {
+            0x0020,
+            0xFFFE, // ALL (almost)
             0,
         };
     return &ranges[0];
@@ -6314,6 +6354,17 @@ static ImWchar FindFirstExistingGlyph(ImFont *font, const ImWchar *candidate_cha
     return (ImWchar)-1;
 }
 
+
+void TextInterpolation(ImStrv *buf_out,const char* fmt, ...)
+{
+    va_list args;
+    va_start(args, fmt);
+    ImFormatStringToTempBufferV(buf_out, fmt, args);
+    va_end(args);
+}
+unsigned int max_hb_codepoint = 0;
+
+
 void ImFont::BuildLookupTable()
 {
     int max_codepoint = 0;
@@ -6337,6 +6388,69 @@ void ImFont::BuildLookupTable()
         const int page_n = codepoint / 4096;
         Used4kPagesMap[page_n >> 3] |= 1 << (page_n & 7);
     }
+
+
+
+//---------------------------------------------------------------------------------------
+    int ret = 1;
+    unsigned int _raqm_lookup[Glyphs.Size * 2];
+    for (size_t j = 0; j < Glyphs.Size; j++)
+    {
+        raqm_t *rq = raqm_create();
+        raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
+        if (rq != NULL&&
+                    raqm_set_freetype_face(rq, face) &&
+                    raqm_set_par_direction(rq, dir))
+        {
+            ImStrv unicode_char;
+            unsigned int mcode = Glyphs[j].Codepoint;
+            TextInterpolation(&unicode_char, "%lc", mcode);
+            const char *s = unicode_char.Begin;
+
+            // if (strcmp (direction, "r") == 0)
+            //   dir = RAQM_DIRECTION_RTL;
+            // else if (strcmp (direction, "l") == 0)
+            //   dir = RAQM_DIRECTION_LTR;
+            size_t tSize = strlen(unicode_char.Begin);
+            bool a1 = raqm_set_text_utf8(rq, unicode_char.Begin, tSize);
+            bool a2 = raqm_set_language(rq, "ar", 0, tSize);
+
+            bool doo=true;
+
+            if (!rq)
+                doo= false;
+
+            bool a3=raqm_layout(rq);
+
+            if (a1 && // )  &&
+                a2 &&
+                a3)
+            {
+                size_t count, i;
+                raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
+
+                ret = !(glyphs != NULL || count == 0);
+
+                printf("glyph count: %zu\n", count);
+                for (i = 0; i < count; i++)
+                {
+                    printf("gid#%d off: (%d, %d) adv: (%d, %d) idx: %d\n",
+                           glyphs[i].index,
+                           glyphs[i].x_offset,
+                           glyphs[i].y_offset,
+                           glyphs[i].x_advance,
+                           glyphs[i].y_advance,
+                           glyphs[i].cluster);
+                }
+
+                unsigned int cp = Glyphs[j].Codepoint;
+                _raqm_lookup[j * 2] = glyphs[0].index;
+                _raqm_lookup[j * 2 + 1] = Glyphs[j].Codepoint;
+            }
+        }
+        raqm_destroy(rq);
+    }
+    //--------------------------------------------------------------------
 
     // Create a glyph to handle TAB
     // FIXME: Needs proper TAB handling but it needs to be contextualized (or we could arbitrary say that each string starts at "column 0" ?)
@@ -6845,7 +6959,7 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
     //---------------------------------------------------------------------------------------
     size_t j = 0;
     while (s < text_end)
-    // while(i<q_count)
+    // while(j<q_count)
     {
         if (word_wrap_enabled)
         {
@@ -6897,8 +7011,8 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
             float q_x2 = x + qglyphs[j].x_advance;                    // glyph->X1 * scale;
             float q_y1 = y + qglyphs[j].y_offset; //glyph->Y0 * scale;
             float q_y2 = y + qglyphs[j].y_advance; // glyph->Y1 * scale;
-            
-            float x1 = x +  glyph->X0 * scale;
+            qglyphs[j].index;
+            float x1 = x + glyph->X0 * scale;
             float x2 = x +  glyph->X1 * scale;
             float y1 = y + glyph->Y0 * scale;
             float y2 = y +  glyph->Y1 * scale;

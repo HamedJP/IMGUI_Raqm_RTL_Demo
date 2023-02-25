@@ -16,15 +16,17 @@
 
 EXE = helloRaqm.out
 IMGUI_DIR = imgui
+RAQM_DIR = libraqm
 SOURCES = main.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+# SOURCE += ./raqmlib/raqm.c
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 LINUX_GL_LIBS = -lGL
 
-CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -Wformat -lraqm -I/usr/include/freetype2 -lfreetype
+CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I./raqmlib
+CXXFLAGS += -g -Wall -Wformat -I/usr/include/freetype2 -lfreetype # -lraqm
 LIBS =
 
 ##---------------------------------------------------------------------
@@ -41,7 +43,7 @@ LIBS =
 
 ifeq ($(UNAME_S), Linux) #LINUX
 	ECHO_MESSAGE = "Linux"
-	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3`
+	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3 raqm harfbuzz`
 
 	CXXFLAGS += `pkg-config --cflags glfw3`
 	CFLAGS = $(CXXFLAGS)
