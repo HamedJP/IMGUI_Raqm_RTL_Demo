@@ -2332,20 +2332,20 @@ ImFont *ImFontAtlas::AddFontFromFileTTF(ImStrv filename, float size_pixels, cons
 
     //---------------------------------------------------------
 
-    if (FT_Init_FreeType (&library) == 0)
-    {
-      if (FT_New_Face (library, filename.Begin, 0, &face) == 0)
-      {
-        if (FT_Set_Char_Size (face, face->units_per_EM, 0, 0, 0) == 0)
-        {
-          raqm_buf = raqm_create ();
-          if (raqm_buf != NULL)
-          {
+    // if (FT_Init_FreeType (&library) == 0)
+    // {
+    //   if (FT_New_Face (library, filename.Begin, 0, &face) == 0)
+    //   {
+    //     if (FT_Set_Char_Size (face, face->units_per_EM, 0, 0, 0) == 0)
+    //     {
+    //       raqm_buf = raqm_create ();
+    //       if (raqm_buf != NULL)
+    //       {
 
-          }
-        }
-      }
-    }
+    //       }
+    //     }
+    //   }
+    // }
     //---------------------------------------------------------
     return AddFontFromMemoryTTF(data, (int)data_size, size_pixels, &font_cfg, glyph_ranges);
 }
@@ -6392,64 +6392,119 @@ void ImFont::BuildLookupTable()
 
 
 //---------------------------------------------------------------------------------------
-    int ret = 1;
+    // int ret = 1;
     unsigned int _raqm_lookup[Glyphs.Size * 2];
-    for (size_t j = 0; j < Glyphs.Size; j++)
+    
+    const char *fontfile;
+    const char *qtext;
+    const char *direction;
+    const char *language;
+    int ret = 1;
+
+    FT_Library library = NULL;
+    FT_Face face = NULL;
+
+    fontfile = "imgui/misc/fonts/ARIALUNI.TTF";
+    // qtext = text.Begin;
+    // direction = RAQM_DIRECTION_DEFAULT;
+    // language = argv[4];
+    size_t q_count;
+    size_t i = 0;
+    raqm_glyph_t *qglyphs;
+    if (FT_Init_FreeType(&library) == 0)
     {
-        raqm_t *rq = raqm_create();
-        raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
-        if (rq != NULL&&
-                    raqm_set_freetype_face(rq, face) &&
-                    raqm_set_par_direction(rq, dir))
+        if (FT_New_Face(library, fontfile, 0, &face) == 0)
         {
-            ImStrv unicode_char;
-            unsigned int mcode = Glyphs[j].Codepoint;
-            TextInterpolation(&unicode_char, "%lc", mcode);
-            const char *s = unicode_char.Begin;
-
-            // if (strcmp (direction, "r") == 0)
-            //   dir = RAQM_DIRECTION_RTL;
-            // else if (strcmp (direction, "l") == 0)
-            //   dir = RAQM_DIRECTION_LTR;
-            size_t tSize = strlen(unicode_char.Begin);
-            bool a1 = raqm_set_text_utf8(rq, unicode_char.Begin, tSize);
-            bool a2 = raqm_set_language(rq, "ar", 0, tSize);
-
-            bool doo=true;
-
-            if (!rq)
-                doo= false;
-
-            bool a3=raqm_layout(rq);
-
-            if (a1 && // )  &&
-                a2 &&
-                a3)
+            if (FT_Set_Char_Size(face, face->units_per_EM, 0, 0, 0) == 0)
             {
-                size_t count, i;
-                raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
 
-                ret = !(glyphs != NULL || count == 0);
-
-                printf("glyph count: %zu\n", count);
-                for (i = 0; i < count; i++)
+                for (size_t l = 0; l < Glyphs.Size; l++)
                 {
-                    printf("gid#%d off: (%d, %d) adv: (%d, %d) idx: %d\n",
-                           glyphs[i].index,
-                           glyphs[i].x_offset,
-                           glyphs[i].y_offset,
-                           glyphs[i].x_advance,
-                           glyphs[i].y_advance,
-                           glyphs[i].cluster);
-                }
+                    raqm_t *rq = raqm_create();
+                    if (rq != NULL)
+                    {
+                            ImStrv unicode_char;
+                            unsigned int mcode = Glyphs[l].Codepoint;
+                            TextInterpolation(&unicode_char, "%lc", mcode);
+                            const char *s = unicode_char.Begin;
 
-                unsigned int cp = Glyphs[j].Codepoint;
-                _raqm_lookup[j * 2] = glyphs[0].index;
-                _raqm_lookup[j * 2 + 1] = Glyphs[j].Codepoint;
+                        raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
+                        if (raqm_set_text_utf8(rq, s, strlen(s)) &&
+                            raqm_set_freetype_face(rq, face) &&
+                            raqm_set_par_direction(rq, dir) &&
+                            raqm_set_language(rq, "fa", 0, strlen(s)) &&
+                            raqm_layout(rq))
+                        {
+                            qglyphs = raqm_get_glyphs(rq, &q_count);
+
+                            ret = !(qglyphs != NULL || q_count == 0);
+
+                            // for (size_t j = 0; j < Glyphs.Size; j++)
+                            // {
+                            // raqm_t *rq = raqm_create();
+                            // raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
+                            // if (rq != NULL &&
+                            // raqm_set_freetype_face(rq, face) &&
+                            // raqm_set_par_direction(rq, dir))
+                            // {
+                            // ImStrv unicode_char;
+                            // unsigned int mcode = Glyphs[j].Codepoint;
+                            // TextInterpolation(&unicode_char, "%lc", mcode);
+                            // const char *s = unicode_char.Begin;
+                            // if (strcmp (direction, "r") == 0)
+                            //   dir = RAQM_DIRECTION_RTL;
+                            // else if (strcmp (direction, "l") == 0)
+                            //   dir = RAQM_DIRECTION_LTR;
+                            // size_t tSize = strlen(s);
+                            // bool a1 = raqm_set_text_utf8(rq, s, tSize);
+                            // bool a2 = raqm_set_language(rq, "ar", 0, tSize);
+
+                            // bool doo = true;
+
+                            // if (!rq)
+                            //     doo = false;
+
+                            // bool a3 = raqm_layout(rq);
+
+                            // if (a1 && // )  &&
+                            //     a2 &&
+                            //     a3)
+                            // {
+                                size_t count, i;
+                                raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
+
+                                ret = !(glyphs != NULL || count == 0);
+
+                                printf("glyph '%s': Codepoint: %d index: %zu\n",s , Glyphs[l].Codepoint, glyphs[0].index);
+                                // for (i = 0; i < count; i++)
+                                // {
+                                //     printf("gid#%d off: (%d, %d) adv: (%d, %d) idx: %d\n",
+                                //            glyphs[i].index,
+                                //            glyphs[i].x_offset,
+                                //            glyphs[i].y_offset,
+                                //            glyphs[i].x_advance,
+                                //            glyphs[i].y_advance,
+                                //            glyphs[i].cluster);
+                                // }
+
+                                unsigned int cp = Glyphs[l].Codepoint;
+                                _raqm_lookup[l * 2] = glyphs[0].index;
+                                _raqm_lookup[l * 2 + 1] = Glyphs[l].Codepoint;
+                            // }
+                            // }
+                            // }
+                        }
+                    }
+                    raqm_destroy(rq);
+                }
             }
+
+            FT_Done_Face(face);
         }
-        raqm_destroy(rq);
+
+        FT_Done_FreeType(library);
     }
+
     //--------------------------------------------------------------------
 
     // Create a glyph to handle TAB
