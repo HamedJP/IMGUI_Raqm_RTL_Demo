@@ -79,9 +79,9 @@ Index of this file:
 //-------------------------------------------------------------------------
 //Raqm items
 
-FT_Library library = NULL;
-FT_Face face = NULL;
-raqm_t *raqm_buf;
+// FT_Library library = NULL;
+// FT_Face face = NULL;
+// raqm_t *raqm_buf;
 
 //-------------------------------------------------------------------------
 
@@ -6459,14 +6459,10 @@ void ImFont::BuildLookupTable()
                             // size_t tSize = strlen(s);
                             // bool a1 = raqm_set_text_utf8(rq, s, tSize);
                             // bool a2 = raqm_set_language(rq, "ar", 0, tSize);
-
                             // bool doo = true;
-
                             // if (!rq)
                             //     doo = false;
-
                             // bool a3 = raqm_layout(rq);
-
                             // if (a1 && // )  &&
                             //     a2 &&
                             //     a3)
@@ -6475,12 +6471,12 @@ void ImFont::BuildLookupTable()
                                 raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
 
                                 ret = !(glyphs != NULL || count == 0);
-                                if(l<15)
+                                if(l<64)
                                     printf("glyph '%s': Codepoint: %d index: %zu\n",s , Glyphs[l].Codepoint, glyphs[0].index);
                                 
                                 unsigned int cp = Glyphs[l].Codepoint;
                                 _raqm_lookup[l * 2] = glyphs[0].index;
-                                _raqm_lookup[l * 2 + 1] = Glyphs[l].Codepoint;
+                                _raqm_lookup[l * 2 + 1] = l;// Glyphs[l].Codepoint;
                             }
                     }
                     raqm_destroy(rq);
@@ -6977,6 +6973,109 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
 
                         ret = !(qglyphs != NULL || q_count == 0);
 
+                        for (size_t i = 0; i < q_count; i++)
+                        {
+                                const ImFontGlyph *glyph = NULL; // FindGlyph((ImWchar)c);
+                                int gSize = Glyphs.Size;
+                                for (size_t j = 0; j < gSize; j++)
+                                {
+                                    if (raqm_lookup[j * 2] == qglyphs[i].index)
+                                    {
+                                        unsigned int cp = raqm_lookup[j * 2 + 1];
+                                        glyph = &Glyphs[cp];
+                                        break;
+                                    }
+                                }
+                                if (glyph == NULL)
+                                {
+                                    glyph = FallbackGlyph;
+                                    continue;
+                                }
+                                float char_width = glyph->AdvanceX * scale;
+                                if (glyph->Visible)
+                                {
+                                    // We don't do a second finer clipping test on the Y axis as we've already skipped anything before clip_rect.y and exit once we pass clip_rect.w
+                                    float x1 = x + glyph->X0 * scale;
+                                    float x2 = x + glyph->X1 * scale;
+                                    float y1 = y + glyph->Y0 * scale;
+                                    float y2 = y + glyph->Y1 * scale;
+                                    if (x1 <= clip_rect.z && x2 >= clip_rect.x)
+                                    {
+                                        // Render a character
+                                        float u1 = glyph->U0;
+                                        float v1 = glyph->V0;
+                                        float u2 = glyph->U1;
+                                        float v2 = glyph->V1;
+
+                                        // CPU side clipping used to fit text in their frame when the frame is too small. Only does clipping for axis aligned quads.
+                                        if (cpu_fine_clip)
+                                        {
+                                            if (x1 < clip_rect.x)
+                                            {
+                                                u1 = u1 + (1.0f - (x2 - clip_rect.x) / (x2 - x1)) * (u2 - u1);
+                                                x1 = clip_rect.x;
+                                            }
+                                            if (y1 < clip_rect.y)
+                                            {
+                                                v1 = v1 + (1.0f - (y2 - clip_rect.y) / (y2 - y1)) * (v2 - v1);
+                                                y1 = clip_rect.y;
+                                            }
+                                            if (x2 > clip_rect.z)
+                                            {
+                                                u2 = u1 + ((clip_rect.z - x1) / (x2 - x1)) * (u2 - u1);
+                                                x2 = clip_rect.z;
+                                            }
+                                            if (y2 > clip_rect.w)
+                                            {
+                                                v2 = v1 + ((clip_rect.w - y1) / (y2 - y1)) * (v2 - v1);
+                                                y2 = clip_rect.w;
+                                            }
+                                            if (y1 >= y2)
+                                            {
+                                                x += char_width;
+                                                continue;
+                                            }
+                                        }
+
+                                        // Support for untinted glyphs
+                                        ImU32 glyph_col = glyph->Colored ? col_untinted : col;
+
+                                        // We are NOT calling PrimRectUV() here because non-inlined causes too much overhead in a debug builds. Inlined here:
+                                        {
+                                            vtx_write[0].pos.x = x1;
+                                            vtx_write[0].pos.y = y1;
+                                            vtx_write[0].col = glyph_col;
+                                            vtx_write[0].uv.x = u1;
+                                            vtx_write[0].uv.y = v1;
+                                            vtx_write[1].pos.x = x2;
+                                            vtx_write[1].pos.y = y1;
+                                            vtx_write[1].col = glyph_col;
+                                            vtx_write[1].uv.x = u2;
+                                            vtx_write[1].uv.y = v1;
+                                            vtx_write[2].pos.x = x2;
+                                            vtx_write[2].pos.y = y2;
+                                            vtx_write[2].col = glyph_col;
+                                            vtx_write[2].uv.x = u2;
+                                            vtx_write[2].uv.y = v2;
+                                            vtx_write[3].pos.x = x1;
+                                            vtx_write[3].pos.y = y2;
+                                            vtx_write[3].col = glyph_col;
+                                            vtx_write[3].uv.x = u1;
+                                            vtx_write[3].uv.y = v2;
+                                            idx_write[0] = (ImDrawIdx)(vtx_index);
+                                            idx_write[1] = (ImDrawIdx)(vtx_index + 1);
+                                            idx_write[2] = (ImDrawIdx)(vtx_index + 2);
+                                            idx_write[3] = (ImDrawIdx)(vtx_index);
+                                            idx_write[4] = (ImDrawIdx)(vtx_index + 2);
+                                            idx_write[5] = (ImDrawIdx)(vtx_index + 3);
+                                            vtx_write += 4;
+                                            vtx_index += 4;
+                                            idx_write += 6;
+                                        }
+                                    }
+                                }
+                                x += char_width;
+                        }
                     }
 
                     raqm_destroy(rq);
@@ -6988,157 +7087,168 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
 
         FT_Done_FreeType(library);
     }
-
+    // printf("%s: count:%d", text.Begin, q_count);
     //---------------------------------------------------------------------------------------
-    size_t j = 0;
-    while (s < text_end)
-    // while(j<q_count)
-    {
-        if (word_wrap_enabled)
-        {
-            // Calculate how far we can render. Requires two passes on the string data but keeps the code simple and not intrusive for what's essentially an uncommon feature.
-            if (!word_wrap_eol)
-                word_wrap_eol = CalcWordWrapPositionA(scale, ImStrv(s, text_end), wrap_width - (x - start_x));
+    // size_t j = 0;
+    // while (s < text_end)
+    // // while(j<q_count)
+    // {
+    //     if (word_wrap_enabled)
+    //     {
+    //         // Calculate how far we can render. Requires two passes on the string data but keeps the code simple and not intrusive for what's essentially an uncommon feature.
+    //         if (!word_wrap_eol)
+    //             word_wrap_eol = CalcWordWrapPositionA(scale, ImStrv(s, text_end), wrap_width - (x - start_x));
 
-            if (s >= word_wrap_eol)
-            {
-                x = start_x;
-                y += line_height;
-                word_wrap_eol = NULL;
-                s = CalcWordWrapNextLineStartA(s, text_end); // Wrapping skips upcoming blanks
-                continue;
-            }
-        }
+    //         if (s >= word_wrap_eol)
+    //         {
+    //             x = start_x;
+    //             y += line_height;
+    //             word_wrap_eol = NULL;
+    //             s = CalcWordWrapNextLineStartA(s, text_end); // Wrapping skips upcoming blanks
+    //             continue;
+    //         }
+    //     }
 
-        // Decode and advance source
-        unsigned int c = (unsigned int)*s;
-        if (c < 0x80)
-            s += 1;
-        else
-            s += ImTextCharFromUtf8(&c, s, text_end);
+    //     // Decode and advance source
+    //     unsigned int c = (unsigned int)*s;
+    //     if (c < 0x80)
+    //         s += 1;
+    //     else
+    //         s += ImTextCharFromUtf8(&c, s, text_end);
 
-        if (c < 32)
-        {
-            if (c == '\n')
-            {
-                x = start_x;
-                y += line_height;
-                if (y > clip_rect.w)
-                    break; // break out of main loop
-                continue;
-            }
-            if (c == '\r')
-                continue;
-        }
+    //     if (c < 32)
+    //     {
+    //         if (c == '\n')
+    //         {
+    //             x = start_x;
+    //             y += line_height;
+    //             if (y > clip_rect.w)
+    //                 break; // break out of main loop
+    //             continue;
+    //         }
+    //         if (c == '\r')
+    //             continue;
+    //     }
 
-        const ImFontGlyph *glyph =NULL;// FindGlyph((ImWchar)c);
-        for (size_t kk = 0; kk < Glyphs.Size; kk++)
-        {
-            if (raqm_lookup[kk * 2] == qglyphs[j].index)
-            {
-                unsigned int cp = raqm_lookup[kk * 2 + 1];
-                glyph = &Glyphs[cp];
-                break;
-            }
-        }
-        j++;
+    //     const ImFontGlyph *glyph = NULL; // FindGlyph((ImWchar)c);
+    //     int gSize = Glyphs.Size;
+    //     for (size_t kk = 0; kk < gSize; kk++)
+    //     {
+    //         if (raqm_lookup[kk * 2] == qglyphs[j].index)
+    //         {
+    //             unsigned int cp = raqm_lookup[kk * 2 + 1];
+    //             glyph = &Glyphs[cp];
+    //             break;
+    //         }
+    //     }
+    //     j++;
 
-        if (glyph == NULL)
-            continue;
+    //     if (glyph == NULL)
+    //     {
+    //         glyph = FindGlyph((ImWchar)c);
 
-        float char_width = glyph->AdvanceX * scale;
-        if (glyph->Visible)
-        {
-            // We don't do a second finer clipping test on the Y axis as we've already skipped anything before clip_rect.y and exit once we pass clip_rect.w
-            // float q_x1 = x + qglyphs[j].x_offset; // glyph->X0 * scale;
-            // float q_x2 = x + qglyphs[j].x_advance;                    // glyph->X1 * scale;
-            // float q_y1 = y + qglyphs[j].y_offset; //glyph->Y0 * scale;
-            // float q_y2 = y + qglyphs[j].y_advance; // glyph->Y1 * scale;
-            // qglyphs[j].index;
-            float x1 = x + glyph->X0 * scale;
-            float x2 = x +  glyph->X1 * scale;
-            float y1 = y + glyph->Y0 * scale;
-            float y2 = y +  glyph->Y1 * scale;
-            if (x1 <= clip_rect.z && x2 >= clip_rect.x)
-            {
-                // Render a character
-                float u1 = glyph->U0;
-                float v1 = glyph->V0;
-                float u2 = glyph->U1;
-                float v2 = glyph->V1;
+    //         if (glyph == NULL)
+    //             continue;
+    //     }
+    //     printf("%lc, ", c);
 
-                // CPU side clipping used to fit text in their frame when the frame is too small. Only does clipping for axis aligned quads.
-                if (cpu_fine_clip)
-                {
-                    if (x1 < clip_rect.x)
-                    {
-                        u1 = u1 + (1.0f - (x2 - clip_rect.x) / (x2 - x1)) * (u2 - u1);
-                        x1 = clip_rect.x;
-                    }
-                    if (y1 < clip_rect.y)
-                    {
-                        v1 = v1 + (1.0f - (y2 - clip_rect.y) / (y2 - y1)) * (v2 - v1);
-                        y1 = clip_rect.y;
-                    }
-                    if (x2 > clip_rect.z)
-                    {
-                        u2 = u1 + ((clip_rect.z - x1) / (x2 - x1)) * (u2 - u1);
-                        x2 = clip_rect.z;
-                    }
-                    if (y2 > clip_rect.w)
-                    {
-                        v2 = v1 + ((clip_rect.w - y1) / (y2 - y1)) * (v2 - v1);
-                        y2 = clip_rect.w;
-                    }
-                    if (y1 >= y2)
-                    {
-                        x += char_width;
-                        continue;
-                    }
-                }
+    //     float char_width = glyph->AdvanceX * scale;
+    //     if (glyph->Visible)
+    //     {
+    //         // We don't do a second finer clipping test on the Y axis as we've already skipped anything before clip_rect.y and exit once we pass clip_rect.w
+    //         // float q_x1 = x + qglyphs[j].x_offset; // glyph->X0 * scale;
+    //         // float q_x2 = x + qglyphs[j].x_advance;                    // glyph->X1 * scale;
+    //         // float q_y1 = y + qglyphs[j].y_offset; //glyph->Y0 * scale;
+    //         // float q_y2 = y + qglyphs[j].y_advance; // glyph->Y1 * scale;
+    //         // qglyphs[j].index;
+    //         float x1 = x + glyph->X0 * scale;
+    //         float x2 = x +  glyph->X1 * scale;
+    //         float y1 = y + glyph->Y0 * scale;
+    //         float y2 = y +  glyph->Y1 * scale;
+    //         if (x1 <= clip_rect.z && x2 >= clip_rect.x)
+    //         {
+    //             // Render a character
+    //             float u1 = glyph->U0;
+    //             float v1 = glyph->V0;
+    //             float u2 = glyph->U1;
+    //             float v2 = glyph->V1;
 
-                // Support for untinted glyphs
-                ImU32 glyph_col = glyph->Colored ? col_untinted : col;
+    //             // CPU side clipping used to fit text in their frame when the frame is too small. Only does clipping for axis aligned quads.
+    //             if (cpu_fine_clip)
+    //             {
+    //                 if (x1 < clip_rect.x)
+    //                 {
+    //                     u1 = u1 + (1.0f - (x2 - clip_rect.x) / (x2 - x1)) * (u2 - u1);
+    //                     x1 = clip_rect.x;
+    //                 }
+    //                 if (y1 < clip_rect.y)
+    //                 {
+    //                     v1 = v1 + (1.0f - (y2 - clip_rect.y) / (y2 - y1)) * (v2 - v1);
+    //                     y1 = clip_rect.y;
+    //                 }
+    //                 if (x2 > clip_rect.z)
+    //                 {
+    //                     u2 = u1 + ((clip_rect.z - x1) / (x2 - x1)) * (u2 - u1);
+    //                     x2 = clip_rect.z;
+    //                 }
+    //                 if (y2 > clip_rect.w)
+    //                 {
+    //                     v2 = v1 + ((clip_rect.w - y1) / (y2 - y1)) * (v2 - v1);
+    //                     y2 = clip_rect.w;
+    //                 }
+    //                 if (y1 >= y2)
+    //                 {
+    //                     x += char_width;
+    //                     continue;
+    //                 }
+    //             }
 
-                // We are NOT calling PrimRectUV() here because non-inlined causes too much overhead in a debug builds. Inlined here:
-                {
-                    vtx_write[0].pos.x = x1;
-                    vtx_write[0].pos.y = y1;
-                    vtx_write[0].col = glyph_col;
-                    vtx_write[0].uv.x = u1;
-                    vtx_write[0].uv.y = v1;
-                    vtx_write[1].pos.x = x2;
-                    vtx_write[1].pos.y = y1;
-                    vtx_write[1].col = glyph_col;
-                    vtx_write[1].uv.x = u2;
-                    vtx_write[1].uv.y = v1;
-                    vtx_write[2].pos.x = x2;
-                    vtx_write[2].pos.y = y2;
-                    vtx_write[2].col = glyph_col;
-                    vtx_write[2].uv.x = u2;
-                    vtx_write[2].uv.y = v2;
-                    vtx_write[3].pos.x = x1;
-                    vtx_write[3].pos.y = y2;
-                    vtx_write[3].col = glyph_col;
-                    vtx_write[3].uv.x = u1;
-                    vtx_write[3].uv.y = v2;
-                    idx_write[0] = (ImDrawIdx)(vtx_index);
-                    idx_write[1] = (ImDrawIdx)(vtx_index + 1);
-                    idx_write[2] = (ImDrawIdx)(vtx_index + 2);
-                    idx_write[3] = (ImDrawIdx)(vtx_index);
-                    idx_write[4] = (ImDrawIdx)(vtx_index + 2);
-                    idx_write[5] = (ImDrawIdx)(vtx_index + 3);
-                    vtx_write += 4;
-                    vtx_index += 4;
-                    idx_write += 6;
-                }
-            }
-        }
-        x += char_width;
-        // j++;
-    }
+    //             // Support for untinted glyphs
+    //             ImU32 glyph_col = glyph->Colored ? col_untinted : col;
 
+    //             // We are NOT calling PrimRectUV() here because non-inlined causes too much overhead in a debug builds. Inlined here:
+    //             {
+    //                 vtx_write[0].pos.x = x1;
+    //                 vtx_write[0].pos.y = y1;
+    //                 vtx_write[0].col = glyph_col;
+    //                 vtx_write[0].uv.x = u1;
+    //                 vtx_write[0].uv.y = v1;
+    //                 vtx_write[1].pos.x = x2;
+    //                 vtx_write[1].pos.y = y1;
+    //                 vtx_write[1].col = glyph_col;
+    //                 vtx_write[1].uv.x = u2;
+    //                 vtx_write[1].uv.y = v1;
+    //                 vtx_write[2].pos.x = x2;
+    //                 vtx_write[2].pos.y = y2;
+    //                 vtx_write[2].col = glyph_col;
+    //                 vtx_write[2].uv.x = u2;
+    //                 vtx_write[2].uv.y = v2;
+    //                 vtx_write[3].pos.x = x1;
+    //                 vtx_write[3].pos.y = y2;
+    //                 vtx_write[3].col = glyph_col;
+    //                 vtx_write[3].uv.x = u1;
+    //                 vtx_write[3].uv.y = v2;
+    //                 idx_write[0] = (ImDrawIdx)(vtx_index);
+    //                 idx_write[1] = (ImDrawIdx)(vtx_index + 1);
+    //                 idx_write[2] = (ImDrawIdx)(vtx_index + 2);
+    //                 idx_write[3] = (ImDrawIdx)(vtx_index);
+    //                 idx_write[4] = (ImDrawIdx)(vtx_index + 2);
+    //                 idx_write[5] = (ImDrawIdx)(vtx_index + 3);
+    //                 vtx_write += 4;
+    //                 vtx_index += 4;
+    //                 idx_write += 6;
+    //             }
+    //         }
+    //     }
+    //     x += char_width;
+    //     // j++;
+    // }
+    // printf("\n");
     // Give back unused vertices (clipped ones, blanks) ~ this is essentially a PrimUnreserve() action.
+
+
+
+
     draw_list->VtxBuffer.Size = (int)(vtx_write - draw_list->VtxBuffer.Data); // Same as calling shrink()
     draw_list->IdxBuffer.Size = (int)(idx_write - draw_list->IdxBuffer.Data);
     draw_list->CmdBuffer[draw_list->CmdBuffer.Size - 1].ElemCount -= (idx_expected_size - draw_list->IdxBuffer.Size);
