@@ -27,8 +27,6 @@ Index of this file:
 #endif
 
 #include "imgui.h"
-// #include "../libraqm/raqm.h"
-#include <raqm.h>
 #ifndef IMGUI_DISABLE
 
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
@@ -74,16 +72,6 @@ Index of this file:
 #pragma GCC diagnostic ignored "-Wstack-protector"  // warning: stack protector not protecting local variables: variable length buffer
 #pragma GCC diagnostic ignored "-Wclass-memaccess"  // [__GNUC__ >= 8] warning: 'memset/memcpy' clearing/writing an object of type 'xxxx' with no trivial copy-assignment; use assignment or value-initialization instead
 #endif
-
-
-//-------------------------------------------------------------------------
-//Raqm items
-
-// FT_Library library = NULL;
-// FT_Face face = NULL;
-// raqm_t *raqm_buf;
-
-//-------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
 // [SECTION] STB libraries implementation (for stb_truetype and stb_rect_pack)
@@ -186,6 +174,16 @@ namespace IMGUI_STB_NAMESPACE
 } // namespace ImStb
 using namespace IMGUI_STB_NAMESPACE;
 #endif
+
+
+//--------------------------------------------------
+//  Raqm library variable requirement
+
+FT_Library library = NULL;
+FT_Face face = NULL;
+raqm_t *raqm_buf;
+
+//--------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // [SECTION] Style functions
@@ -2182,6 +2180,9 @@ void ImFontAtlas::ClearFonts()
     IM_ASSERT(!Locked && "Cannot modify a locked ImFontAtlas between NewFrame() and EndFrame/Render()!");
     Fonts.clear_delete();
     TexReady = false;
+    FT_Done_Face(face);
+    FT_Done_FreeType(library);
+    raqm_destroy(raqm_buf);
 }
 
 void ImFontAtlas::Clear()
@@ -6424,10 +6425,10 @@ void ImFont::BuildLookupTable()
                     raqm_t *rq = raqm_create();
                     if (rq != NULL)
                     {
-                            ImStrv unicode_char;
-                            unsigned int mcode = Glyphs[l].Codepoint;
-                            TextInterpolation(&unicode_char, "%lc", mcode);
-                            const char *s = unicode_char.Begin;
+                        ImStrv unicode_char;
+                        unsigned int mcode = Glyphs[l].Codepoint;
+                        TextInterpolation(&unicode_char, "%lc", mcode);
+                        const char *s = unicode_char.Begin;
 
                         raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
                         if (raqm_set_text_utf8(rq, s, strlen(s)) &&
@@ -6440,54 +6441,23 @@ void ImFont::BuildLookupTable()
 
                             ret = !(qglyphs != NULL || q_count == 0);
 
-                            // for (size_t j = 0; j < Glyphs.Size; j++)
-                            // {
-                            // raqm_t *rq = raqm_create();
-                            // raqm_direction_t dir = RAQM_DIRECTION_DEFAULT;
-                            // if (rq != NULL &&
-                            // raqm_set_freetype_face(rq, face) &&
-                            // raqm_set_par_direction(rq, dir))
-                            // {
-                            // ImStrv unicode_char;
-                            // unsigned int mcode = Glyphs[j].Codepoint;
-                            // TextInterpolation(&unicode_char, "%lc", mcode);
-                            // const char *s = unicode_char.Begin;
-                            // if (strcmp (direction, "r") == 0)
-                            //   dir = RAQM_DIRECTION_RTL;
-                            // else if (strcmp (direction, "l") == 0)
-                            //   dir = RAQM_DIRECTION_LTR;
-                            // size_t tSize = strlen(s);
-                            // bool a1 = raqm_set_text_utf8(rq, s, tSize);
-                            // bool a2 = raqm_set_language(rq, "ar", 0, tSize);
-                            // bool doo = true;
-                            // if (!rq)
-                            //     doo = false;
-                            // bool a3 = raqm_layout(rq);
-                            // if (a1 && // )  &&
-                            //     a2 &&
-                            //     a3)
-                            // {
-                                size_t count, i;
-                                raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
+                            size_t count, i;
+                            raqm_glyph_t *glyphs = raqm_get_glyphs(rq, &count);
 
-                                ret = !(glyphs != NULL || count == 0);
-                                if(l<64)
-                                    printf("glyph '%s': Codepoint: %d index: %zu\n",s , Glyphs[l].Codepoint, glyphs[0].index);
-                                
-                                unsigned int cp = Glyphs[l].Codepoint;
-                                _raqm_lookup[l * 2] = glyphs[0].index;
-                                _raqm_lookup[l * 2 + 1] = l;// Glyphs[l].Codepoint;
-                            }
+                            ret = !(glyphs != NULL || count == 0);
+                            if (l < 64)
+                                printf("glyph '%s': Codepoint: %d index: %zu\n", s, Glyphs[l].Codepoint, glyphs[0].index);
+
+                            unsigned int cp = Glyphs[l].Codepoint;
+                            _raqm_lookup[l * 2] = glyphs[0].index;
+                            _raqm_lookup[l * 2 + 1] = l; // Glyphs[l].Codepoint;
+                        }
                     }
                     raqm_destroy(rq);
                 }
             }
-
-            FT_Done_Face(face);
         }
-
-        FT_Done_FreeType(library);
-        raqm_lookup=_raqm_lookup;
+        raqm_lookup = _raqm_lookup;
     }
 
     //--------------------------------------------------------------------
@@ -6942,10 +6912,10 @@ void ImFont::RenderText(ImDrawList *draw_list, float size, const ImVec2 &pos, Im
     const char *language;
     int ret = 1;
 
-    FT_Library library = NULL;
-    FT_Face face = NULL;
+    // FT_Library library = NULL;
+    // FT_Face face = NULL;
 
-    fontfile = "imgui/misc/fonts/ARIALUNI.TTF";
+    // fontfile = "imgui/misc/fonts/ARIALUNI.TTF";
     qtext = text.Begin;
     // direction = RAQM_DIRECTION_DEFAULT;
     // language = argv[4];
