@@ -1,0 +1,3 @@
+[submodule "libraqm"]
+	path = libraqm
+	url = https://github.com/HOST-Oman/libraqm.git
