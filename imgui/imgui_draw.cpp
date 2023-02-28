@@ -2333,20 +2333,20 @@ ImFont *ImFontAtlas::AddFontFromFileTTF(ImStrv filename, float size_pixels, cons
 
     //---------------------------------------------------------
 
-    // if (FT_Init_FreeType (&library) == 0)
-    // {
-    //   if (FT_New_Face (library, filename.Begin, 0, &face) == 0)
-    //   {
-    //     if (FT_Set_Char_Size (face, face->units_per_EM, 0, 0, 0) == 0)
-    //     {
-    //       raqm_buf = raqm_create ();
-    //       if (raqm_buf != NULL)
-    //       {
+    if (FT_Init_FreeType (&library) == 0)
+    {
+      if (FT_New_Face (library, filename.Begin, 0, &face) == 0)
+      {
+        if (FT_Set_Char_Size (face, face->units_per_EM, 0, 0, 0) == 0)
+        {
+          raqm_buf = raqm_create ();
+          if (raqm_buf != NULL)
+          {
 
-    //       }
-    //     }
-    //   }
-    // }
+          }
+        }
+      }
+    }
     //---------------------------------------------------------
     return AddFontFromMemoryTTF(data, (int)data_size, size_pixels, &font_cfg, glyph_ranges);
 }
@@ -6397,32 +6397,34 @@ void ImFont::BuildLookupTable()
     // int ret = 1;
     unsigned int _raqm_lookup[Glyphs.Size * 2];
     
-    const char *fontfile;
+    // const char *fontfile;
     const char *qtext;
     const char *direction;
     const char *language;
     int ret = 1;
 
-    FT_Library library = NULL;
-    FT_Face face = NULL;
+    // FT_Library library = NULL;
+    // FT_Face face = NULL;
 
-    fontfile = "imgui/misc/fonts/ARIALUNI.TTF";
+    // fontfile = "imgui/misc/fonts/ARIALUNI.TTF";
     // qtext = text.Begin;
     // direction = RAQM_DIRECTION_DEFAULT;
     // language = argv[4];
     size_t q_count;
     size_t i = 0;
     raqm_glyph_t *qglyphs;
-    if (FT_Init_FreeType(&library) == 0)
+    // if (FT_Init_FreeType(&library) == 0)
     {
-        if (FT_New_Face(library, fontfile, 0, &face) == 0)
+        // if (FT_New_Face(library, fontfile, 0, &face) == 0)
         {
-            if (FT_Set_Char_Size(face, face->units_per_EM, 0, 0, 0) == 0)
+            // if (FT_Set_Char_Size(face, face->units_per_EM, 0, 0, 0) == 0)
             {
+
 
                 for (size_t l = 0; l < Glyphs.Size; l++)
                 {
                     raqm_t *rq = raqm_create();
+                    // raqm_clear_contents(raqm_buf);
                     if (rq != NULL)
                     {
                         ImStrv unicode_char;

@@ -40,11 +40,17 @@ LIBS =
 ##---------------------------------------------------------------------
 ## BUILD FLAGS PER PLATFORM
 ##---------------------------------------------------------------------
+# liberraqm:
+# 	echo "libraqm build"
+# 	# cd ./libraqm
+# 	pwd
+# 	# cd ..
+# 	# meson build
+# 	# ninja -C build
 
 ifeq ($(UNAME_S), Linux) #LINUX
 	ECHO_MESSAGE = "Linux"
 	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3 raqm harfbuzz`
-
 	CXXFLAGS += `pkg-config --cflags glfw3`
 	CFLAGS = $(CXXFLAGS)
 endif
@@ -71,17 +77,26 @@ endif
 ##---------------------------------------------------------------------
 ## BUILD RULES
 ##---------------------------------------------------------------------
-
+# raqqm:
+# 	echo "Hamed"
+# 	cd libraqm;meson build
+# 	cd libraqm;ninja -C build
 %.o:%.cpp
+	echo "one"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:$(IMGUI_DIR)/%.cpp
+	echo "two"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:$(IMGUI_DIR)/backends/%.cpp
+	echo "three"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 all: $(EXE)
+	echo "Hamed"
+	cd libraqm;meson build
+	cd libraqm;ninja -C build
 	@echo Build complete for $(ECHO_MESSAGE)
 
 $(EXE): $(OBJS)
