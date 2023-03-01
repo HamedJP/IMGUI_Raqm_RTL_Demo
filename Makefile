@@ -25,8 +25,8 @@ OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 UNAME_S := $(shell uname -s)
 LINUX_GL_LIBS = -lGL
 
-CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I./raqmlib
-CXXFLAGS += -g -Wall -Wformat -I/usr/include/freetype2 -lfreetype # -lraqm
+CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends #-I./raqmlib
+CXXFLAGS += -g -Wformat  libraqm/build/src/libraqm.so.0.10.0.p/raqm.c.o -I/usr/include/freetype2 -lfreetype  -lfribidi  #-Wall  -lraqm
 LIBS =
 
 ##---------------------------------------------------------------------
@@ -40,17 +40,9 @@ LIBS =
 ##---------------------------------------------------------------------
 ## BUILD FLAGS PER PLATFORM
 ##---------------------------------------------------------------------
-# liberraqm:
-# 	echo "libraqm build"
-# 	# cd ./libraqm
-# 	pwd
-# 	# cd ..
-# 	# meson build
-# 	# ninja -C build
-
 ifeq ($(UNAME_S), Linux) #LINUX
 	ECHO_MESSAGE = "Linux"
-	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3 raqm harfbuzz`
+	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3 harfbuzz`
 	CXXFLAGS += `pkg-config --cflags glfw3`
 	CFLAGS = $(CXXFLAGS)
 endif
@@ -77,11 +69,12 @@ endif
 ##---------------------------------------------------------------------
 ## BUILD RULES
 ##---------------------------------------------------------------------
-# raqqm:
-# 	echo "Hamed"
+# libraqm/build/src/*/raqm.c.o:libraqm/src/*.c
+# 	echo "libraqm"
 # 	cd libraqm;meson build
 # 	cd libraqm;ninja -C build
-%.o:%.cpp
+
+%.o:%.cpp libraqm/build/src/*/raqm.c.o
 	echo "one"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -93,13 +86,22 @@ endif
 	echo "three"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+# %.o:libraqm/build/src/*/raqm.c.o
+# 	echo "zero"
+# 	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+# libraqm/build/src/*/raqm.c.o:#libraqm/src/*.c
+# 	echo "libraqm"
+# 	cd libraqm;meson build
+# 	cd libraqm;ninja -C build
+# 	echo "----------------------------------------------"
+
 all: $(EXE)
-	echo "Hamed"
-	cd libraqm;meson build
-	cd libraqm;ninja -C build
+	echo "All"
 	@echo Build complete for $(ECHO_MESSAGE)
 
 $(EXE): $(OBJS)
+	echo "HERE?"
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 clean:
