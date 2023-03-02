@@ -20,8 +20,8 @@ RAQM_DIR = libraqm
 SOURCES = main.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
-# SOURCE += ./raqmlib/raqm.c
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
+OBJS += libraqm/build/src/*/raqm.c.o
 UNAME_S := $(shell uname -s)
 LINUX_GL_LIBS = -lGL
 
@@ -69,10 +69,6 @@ endif
 ##---------------------------------------------------------------------
 ## BUILD RULES
 ##---------------------------------------------------------------------
-# libraqm/build/src/*/raqm.c.o:libraqm/src/*.c
-# 	echo "libraqm"
-# 	cd libraqm;meson build
-# 	cd libraqm;ninja -C build
 
 %.o:%.cpp libraqm/build/src/*/raqm.c.o
 	echo "one"
@@ -90,12 +86,6 @@ endif
 # 	echo "zero"
 # 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-# libraqm/build/src/*/raqm.c.o:#libraqm/src/*.c
-# 	echo "libraqm"
-# 	cd libraqm;meson build
-# 	cd libraqm;ninja -C build
-# 	echo "----------------------------------------------"
-
 all: $(EXE)
 	echo "All"
 	@echo Build complete for $(ECHO_MESSAGE)
@@ -103,6 +93,13 @@ all: $(EXE)
 $(EXE): $(OBJS)
 	echo "HERE?"
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
+
+libraqm/build/src/*/raqm.c.o:#libraqm/src/*.c
+	echo "libraqm"
+	cd libraqm;meson build
+	cd libraqm;ninja -C build
+	echo "----------------------------------------------"
+
 
 clean:
 	rm -f $(EXE) $(OBJS)
