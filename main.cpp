@@ -5,9 +5,9 @@
 
 // This example can also compile and run with Emscripten. See Makefile.emscripten for details.
 
-#include "imgui/imgui.h"
-#include "imgui/backends/imgui_impl_glfw.h"
-#include "imgui/backends/imgui_impl_opengl3.h"
+#include "imgui_Raqm/imgui.h"
+#include "imgui_Raqm/backends/imgui_impl_glfw.h"
+#include "imgui_Raqm/backends/imgui_impl_opengl3.h"
 #include <stdio.h>
 #define GL_SILENCE_DEPRECATION
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -78,6 +78,7 @@ int main(int, char**)
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    // ImGuiIO& io = ImGui::GetIO(); (void)io;
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -106,7 +107,7 @@ int main(int, char**)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
-    io.Fonts->AddFontFromFileTTF("imgui/misc/fonts/ARIALUNI.TTF", 26.0f);
+    io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesFULL());
 
     // Main loop
 #ifndef __EMSCRIPTEN__

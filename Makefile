@@ -15,7 +15,7 @@
 #CXX = clang++
 
 EXE = helloRaqm.out
-IMGUI_DIR = imgui
+IMGUI_DIR = imgui_Raqm
 RAQM_DIR = libraqm
 SOURCES = main.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
