@@ -107,6 +107,7 @@ int main(int, char**)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
+    io.Fonts->EnableComplexTextLayout();
     io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesFULL());
 
     // Main loop
@@ -165,7 +166,7 @@ void MainLoopStep()
 
         ImGui::Begin("!Aa");                          // Create a window called "Hello, world!" and append into it.
 
-        ImGui::Text("ب پپپ");               // Display some text (you can use a format strings too)
+        // ImGui::Text("ب پپپ");               // Display some text (you can use a format strings too)
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", &show_another_window);
