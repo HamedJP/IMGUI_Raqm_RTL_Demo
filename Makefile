@@ -71,35 +71,23 @@ endif
 ##---------------------------------------------------------------------
 
 %.o:%.cpp libraqm/build/src/*/raqm.c.o
-	echo "one"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:$(IMGUI_DIR)/%.cpp
-	echo "two"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 %.o:$(IMGUI_DIR)/backends/%.cpp
-	echo "three"
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-# %.o:libraqm/build/src/*/raqm.c.o
-# 	echo "zero"
-# 	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
 all: $(EXE)
-	echo "All"
 	@echo Build complete for $(ECHO_MESSAGE)
 
 $(EXE): $(OBJS)
-	echo "HERE?"
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 libraqm/build/src/*/raqm.c.o:#libraqm/src/*.c
-	echo "libraqm"
 	cd libraqm;meson build
 	cd libraqm;ninja -C build
-	echo "----------------------------------------------"
-
 
 clean:
 	rm -f $(EXE) $(OBJS)
