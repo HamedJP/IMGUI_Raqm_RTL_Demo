@@ -164,9 +164,9 @@ void MainLoopStep()
         static float f = 0.0f;
         static int counter = 0;
 
-        ImGui::Begin("!Aa");                          // Create a window called "Hello, world!" and append into it.
+        ImGui::Begin("!Aal");                          // Create a window called "Hello, world!" and append into it.
 
-        // ImGui::Text("ب پپپ");               // Display some text (you can use a format strings too)
+        ImGui::Text(" الله ب پپپ");               // Display some text (you can use a format strings too)
         ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", &show_another_window);
