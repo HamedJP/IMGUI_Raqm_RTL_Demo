@@ -108,7 +108,7 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
     io.Fonts->EnableComplexTextLayout();
-    io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesDefault());
+    io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesFULL());
 
     // Main loop
 #ifndef __EMSCRIPTEN__
@@ -163,11 +163,12 @@ void MainLoopStep()
     {
         static float f = 0.0f;
         static int counter = 0;
+        
+        ImGui::Begin("!Aal");                          // Create a window called "Hello, world!" and append into it.
 
-        ImGui::Begin("!Aa");                          // Create a window called "Hello, world!" and append into it.
-
-        ImGui::Text("ب چ پپ پ");               // Display some text (you can use a format strings too)
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+        ImGui::Text(" الله ب پپپ");               // Display some text (you can use a format strings too)
+        ImGui::Text("%lc",0x00AD);               // Display some text (you can use a format strings too)
+        ImGui::Text("This is some useful text­.");               // Display some text (you can use a format strings too)
         ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
         ImGui::Checkbox("Another Window", &show_another_window);
 
