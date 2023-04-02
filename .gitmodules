@@ -4,3 +4,4 @@
 [submodule "imgui_Raqm"]
 	path = imgui_Raqm
 	url = https://github.com/HamedJP/imgui_Raqm.git
+	branch = RTL
