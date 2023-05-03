@@ -108,7 +108,7 @@ int main(int, char**)
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
     io.Fonts->EnableComplexTextLayout();
-    io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesFULL());
+    io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesArabic());
 
     // Main loop
 #ifndef __EMSCRIPTEN__
