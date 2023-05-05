@@ -107,7 +107,7 @@ int main(int, char**)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
-    io.Fonts->EnableComplexTextLayout();
+    //io.Fonts->EnableComplexTextLayout();
     io.Fonts->AddFontFromFileTTF("fonts/ARIALUNI.TTF", 26.0f,NULL,  io.Fonts->GetGlyphRangesArabic());
 
     // Main loop
@@ -151,7 +151,7 @@ void MainLoopStep()
 
     // Our state
     // (we use static, which essentially makes the variable globals, as a convenience to keep the example code easy to follow)
-    static bool show_demo_window = true;
+    static bool show_demo_window = false;
     static bool show_another_window = false;
     static ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
